@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "480520979912",
+    "project_id": "world-6eb53",
+    "storage_bucket": "world-6eb53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480520979912:android:c5b897e119105804a82cfd",
+        "android_client_info": {
+          "package_name": "com.example.pavanred"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "480520979912-82cd377ehfj5qocbgu7d2brm1qf51k2j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArM4-MhUxbuFkpVii21Oukoa8kAhaskDk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "480520979912-82cd377ehfj5qocbgu7d2brm1qf51k2j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480520979912:android:9c91819f256893f0a82cfd",
+        "android_client_info": {
+          "package_name": "com.pavan.amore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "480520979912-82cd377ehfj5qocbgu7d2brm1qf51k2j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArM4-MhUxbuFkpVii21Oukoa8kAhaskDk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "480520979912-82cd377ehfj5qocbgu7d2brm1qf51k2j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
