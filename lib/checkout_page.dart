@@ -109,7 +109,7 @@ Order Date: ${DateTime.now().toString()}
   }
 
   Future<void> _openStripePayment() async {
-    const url = 'https://buy.stripe.com/8wM6qwbVE2qx9fG7sw';
+    const url = 'https://buy.stripe.com/14AfZh75b9PO2qTcylcQU10';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     } else {

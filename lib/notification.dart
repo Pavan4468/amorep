@@ -6,7 +6,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({Key? key}) : super(key: key);
+  final Function(String)? onNavigateToPost;
+  const NotificationsPage({Key? key, this.onNavigateToPost}) : super(key: key);
 
   @override
   _NotificationsPageState createState() => _NotificationsPageState();
@@ -77,15 +78,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
             padding: const EdgeInsets.all(16.0),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-              final notification =
-                  notifications[index].data() as Map<String, dynamic>;
+              final notification = notifications[index].data() as Map<String, dynamic>;
               final timestamp = (notification['timestamp'] as Timestamp?)?.toDate();
               final formattedTime = timestamp != null
                   ? DateFormat('MMM d, yyyy h:mm a').format(timestamp)
                   : 'Unknown';
               final likerName = notification['likerName'] ?? 'Anonymous';
-              final likerProfile = notification['likerProfile'] ??
-                  'https://i.pravatar.cc/150?img=0';
+              final likerProfile = notification['likerProfile'] ?? 'https://i.pravatar.cc/150?img=0';
+              final postId = notification['postId'];
 
               return FadeInUp(
                 duration: const Duration(milliseconds: 300),
@@ -121,11 +121,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             .collection('notifications')
                             .doc(notifications[index].id)
                             .update({'read': true});
+                        // Navigate to the post
+                        if (postId != null && widget.onNavigateToPost != null) {
+                          Navigator.pop(context); // Return to PostsPage
+                          widget.onNavigateToPost!(postId);
+                        }
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Failed to mark as read: $e'),
-                            backgroundColor: Colors.red,
+                            content: Text('Failed to mark as read: $e', style: const TextStyle(color: Colors.black)),
+                            backgroundColor: const Color(0xFFD4AF37),
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }

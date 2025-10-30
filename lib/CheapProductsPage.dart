@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'CartPage.dart';
 
 class WomenProductsPage extends StatefulWidget {
@@ -29,27 +29,30 @@ class WomenProductsPageState extends State<WomenProductsPage> {
     });
   }
 
-  Future<void> _addToCart(Map<String, dynamic> product, String selectedSize) async {
+  Future<void> _addToCart(Map<String, dynamic> product, String selectedSize, int quantity, BuildContext sheetContext) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> cart = prefs.getStringList('cart') ?? [];
     cart.add(
-        '${product['name']}|${product['price']}|${product['image']}|${product['description']}|${product['category']}|${product['stock']}|$selectedSize');
+        '${product['name']}|${product['price']}|${product['image']}|${product['description']}|${product['category']}|${product['stock']}|$selectedSize|$quantity');
     await prefs.setStringList('cart', cart);
     setState(() {
       cartItemCount = cart.length;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(sheetContext).showSnackBar(
       SnackBar(
-        content: Text('${product['name']} (Size: $selectedSize) added to cart'),
+        content: Text('${product['name']} (Size: $selectedSize, Qty: $quantity) added to cart'),
         backgroundColor: Colors.teal,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+        elevation: 6,
       ),
     );
   }
 
   void _showProductDetails(BuildContext context, Map<String, dynamic> product) {
     String selectedSize = 'M'; // Default size
+    int quantity = 1; // Default quantity
     List<String> availableSizes = ['S', 'M', 'L', 'XL'];
     List<String> productImages = [
       product['image1'] as String? ?? product['image'] as String? ?? 'https://via.placeholder.com/300',
@@ -66,136 +69,179 @@ class WomenProductsPageState extends State<WomenProductsPage> {
         initialChildSize: 0.9,
         minChildSize: 0.5,
         maxChildSize: 0.95,
-        builder: (_, controller) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: ListView(
-            controller: controller,
-            children: [
-              CarouselSlider(
-                options: CarouselOptions(
-                  height: 300,
-                  autoPlay: true,
-                  enlargeCenterPage: true,
-                  viewportFraction: 0.85,
+        builder: (_, controller) => Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: ListView(
+              controller: controller,
+              children: [
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 300,
+                    autoPlay: true,
+                    enlargeCenterPage: true,
+                    viewportFraction: 0.85,
+                  ),
+                  items: productImages.map((url) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        url,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 300,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.error, color: Colors.red),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-                items: productImages.map((url) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        height: 300,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.error, color: Colors.red),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product['name'] ?? 'Unknown Product',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '€${(product['price'] as num? ?? 0).toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      product['description'] ?? 'No description available',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Chip(
-                          label: Text(product['category'] ?? 'Unknown'),
-                          backgroundColor: Colors.teal[50],
-                          labelStyle: TextStyle(color: Colors.teal[700]),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product['name'] ?? 'Unknown Product',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        Chip(
-                          label: Text('${product['stock'] ?? 0} in stock'),
-                          backgroundColor: Colors.teal[50],
-                          labelStyle: TextStyle(color: Colors.teal[700]),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Select Size',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    StatefulBuilder(
-                      builder: (context, setState) => Wrap(
-                        spacing: 8,
-                        children: availableSizes.map((size) {
-                          return ChoiceChip(
-                            label: Text(size),
-                            selected: selectedSize == size,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() {
-                                  selectedSize = size;
-                                });
-                              }
-                            },
-                            selectedColor: Colors.teal,
-                            labelStyle: TextStyle(
-                              color: selectedSize == size ? Colors.white : Colors.black87,
+                      const SizedBox(height: 8),
+                      Text(
+                        '€${(product['price'] as num? ?? 0).toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        product['description'] ?? 'No description available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Chip(
+                            label: Text(product['category'] ?? 'Unknown'),
+                            backgroundColor: Colors.teal[50],
+                            labelStyle: TextStyle(color: Colors.teal[700]),
+                          ),
+                          Chip(
+                            label: Text('${product['stock'] ?? 0} in stock'),
+                            backgroundColor: Colors.teal[50],
+                            labelStyle: TextStyle(color: Colors.teal[700]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Select Size',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      StatefulBuilder(
+                        builder: (context, setState) => Wrap(
+                          spacing: 8,
+                          children: availableSizes.map((size) {
+                            return ChoiceChip(
+                              label: Text(size),
+                              selected: selectedSize == size,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    selectedSize = size;
+                                  });
+                                }
+                              },
+                              selectedColor: Colors.teal,
+                              labelStyle: TextStyle(
+                                color: selectedSize == size ? Colors.white : Colors.black87,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Quantity',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      StatefulBuilder(
+                        builder: (context, setState) => Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                if (quantity > 1) {
+                                  setState(() {
+                                    quantity--;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.remove_circle, color: Colors.teal),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => _addToCart(product, selectedSize),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                            Text(
+                              '$quantity',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                if (quantity < (product['stock'] ?? 1)) {
+                                  setState(() {
+                                    quantity++;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.add_circle, color: Colors.teal),
+                            ),
+                          ],
                         ),
                       ),
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => _addToCart(product, selectedSize, quantity, context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add to Cart',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

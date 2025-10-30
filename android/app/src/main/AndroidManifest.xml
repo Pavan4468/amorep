@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <meta-data android:name="onesignal_app_id"
+    android:value="71fc2c4f-dd2d-4556-8d41-830298f312b7" />
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="AMORE"

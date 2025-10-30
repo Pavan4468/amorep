@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pavanred/notification.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -11,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'PromoteDetailsPage.dart';
 import 'likes_page.dart';
 
+
 class PostsPage extends StatefulWidget {
   const PostsPage({Key? key}) : super(key: key);
 
@@ -20,6 +22,8 @@ class PostsPage extends StatefulWidget {
 
 class _PostsPageState extends State<PostsPage> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, int> _postIndices = {};
 
   // Check if the URL is likely a video
   bool _isVideoUrl(String url) {
@@ -31,11 +35,21 @@ class _PostsPageState extends State<PostsPage> {
 
   Future<void> _toggleLike(String postId, Map<String, dynamic> post) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to like a post.', style: TextStyle(color: Colors.black)),
+          backgroundColor: Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     final userId = user.uid;
     final isCurrentlyLiked = post['isLiked'] ?? false;
     final likers = List<Map<String, dynamic>>.from(post['likers'] ?? []);
+    final postOwnerId = post['userId'];
 
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -54,21 +68,59 @@ class _PostsPageState extends State<PostsPage> {
       final userName = userData['name'] ?? 'Anonymous';
       final userProfile = userData['profileImageUrl'] ?? 'https://i.pravatar.cc/150?img=0';
 
-      if (isCurrentlyLiked) {
-        likers.removeWhere((liker) => liker['userId'] == userId);
-      } else {
-        likers.add({
-          'userId': userId,
-          'userName': userName,
-          'profileImage': userProfile,
-        });
-      }
+      // Run a transaction to update likes and likers atomically
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final postRef = FirebaseFirestore.instance.collection('posts').doc(postId);
+        final postSnapshot = await transaction.get(postRef);
+        if (!postSnapshot.exists) {
+          throw Exception('Post does not exist');
+        }
 
-      await FirebaseFirestore.instance.collection('posts').doc(postId).update({
-        'isLiked': !isCurrentlyLiked,
-        'likes': isCurrentlyLiked ? post['likes'] - 1 : post['likes'] + 1,
-        'likers': likers,
+        if (isCurrentlyLiked) {
+          // Unlike the post
+          likers.removeWhere((liker) => liker['userId'] == userId);
+          transaction.update(postRef, {
+            'isLiked': false,
+            'likes': post['likes'] - 1,
+            'likers': likers,
+          });
+        } else {
+          // Like the post
+          likers.add({
+            'userId': userId,
+            'userName': userName,
+            'profileImage': userProfile,
+          });
+          transaction.update(postRef, {
+            'isLiked': true,
+            'likes': post['likes'] + 1,
+            'likers': likers,
+          });
+
+          // Create a notification for the post owner (only if it's not their own post)
+          if (postOwnerId != userId) {
+            await FirebaseFirestore.instance.collection('notifications').add({
+              'type': 'like',
+              'postId': postId,
+              'userId': postOwnerId,
+              'likerId': userId,
+              'likerName': userName,
+              'likerProfile': userProfile,
+              'message': '$userName liked your post',
+              'timestamp': FieldValue.serverTimestamp(),
+              'read': false,
+            });
+          }
+        }
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isCurrentlyLiked ? 'Post unliked!' : 'Post liked!', style: const TextStyle(color: Colors.black)),
+          backgroundColor: const Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -93,7 +145,7 @@ class _PostsPageState extends State<PostsPage> {
           'user': userName,
           'profile': userProfile,
           'text': commentText.trim(),
-          'time': DateTime.now().toIso8601String(), // Store as ISO 8601
+          'time': DateTime.now().toIso8601String(),
         }
       ]),
       'commentsCount': FieldValue.increment(1),
@@ -322,7 +374,6 @@ class _PostsPageState extends State<PostsPage> {
                             itemCount: post['comments'].length,
                             itemBuilder: (context, commentIndex) {
                               final comment = post['comments'][commentIndex];
-                              // Handle invalid or 'Just now' comment times
                               String commentTime;
                               try {
                                 commentTime = comment['time'] != null &&
@@ -451,9 +502,32 @@ class _PostsPageState extends State<PostsPage> {
     });
   }
 
+  void _navigateToPost(String postId) {
+    if (_postIndices.containsKey(postId)) {
+      final index = _postIndices[postId]! + (_postIndices[postId]! ~/ 3); // Adjust for ads
+      // Estimate item height (adjust based on your UI)
+      const double itemHeight = 400.0; // Approximate height per post card
+      final offset = index * itemHeight;
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Post $postId not found in current view'),
+          backgroundColor: const Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _refreshController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -474,6 +548,59 @@ class _PostsPageState extends State<PostsPage> {
         ),
         backgroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                .where('read', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data?.docs.length ?? 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Color(0xFFD4AF37)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsPage(
+                            onNavigateToPost: _navigateToPost,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFD4AF37),
@@ -496,7 +623,7 @@ class _PostsPageState extends State<PostsPage> {
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('posts')
-              .orderBy('time', descending: true) // Use 'time' field
+              .orderBy('time', descending: true)
               .snapshots(),
           builder: (context, postSnapshot) {
             if (postSnapshot.hasError) {
@@ -524,6 +651,10 @@ class _PostsPageState extends State<PostsPage> {
             }
             debugPrint('Fetched ${posts.length} posts');
 
+            // Update post indices
+            _postIndices.clear();
+            posts.asMap().forEach((i, doc) => _postIndices[doc.id] = i);
+
             return StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('ads').snapshots(),
               builder: (context, adSnapshot) {
@@ -544,6 +675,7 @@ class _PostsPageState extends State<PostsPage> {
                 debugPrint('Fetched ${ads.length} ads');
 
                 return ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16.0),
                   itemCount: posts.length + (posts.length ~/ 3),
                   itemBuilder: (context, index) {
@@ -739,7 +871,6 @@ class _PostsPageState extends State<PostsPage> {
                     final post = posts[postIndex].data() as Map<String, dynamic>;
                     final postId = posts[postIndex].id;
                     final postImageUrl = post['image'] ?? '';
-                    // Parse time string
                     String formattedTime;
                     try {
                       formattedTime = post['time'] != null

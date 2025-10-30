@@ -34,8 +34,8 @@ class _CartPageState extends State<CartPage> {
           'description': parts[3],
           'category': parts[4],
           'stock': int.parse(parts[5]),
-          'size': parts[6], // Added size
-          'quantity': 1,
+          'size': parts[6],
+          'quantity': int.parse(parts[7]), // Parse quantity from cart data
         };
       }).toList();
     });
@@ -44,32 +44,44 @@ class _CartPageState extends State<CartPage> {
   Future<void> _updateCart() async {
     final prefs = await SharedPreferences.getInstance();
     final cart = cartItems.map((item) {
-      return '${item['name']}|${item['price']}|${item['image']}|${item['description']}|${item['category']}|${item['stock']}|${item['size']}';
+      return '${item['name']}|${item['price']}|${item['image']}|${item['description']}|${item['category']}|${item['stock']}|${item['size']}|${item['quantity']}';
     }).toList();
     await prefs.setStringList('cart', cart);
   }
 
   Future<void> _removeFromCart(int index) async {
+    final itemName = cartItems[index]['name'];
     setState(() {
       cartItems.removeAt(index);
     });
     await _updateCart();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item removed from cart'),
+      SnackBar(
+        content: Text('$itemName removed from cart'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
   void _updateQuantity(int index, int newQuantity) {
     if (newQuantity > 0 && newQuantity <= cartItems[index]['stock']) {
+      final itemName = cartItems[index]['name'];
       setState(() {
         cartItems[index]['quantity'] = newQuantity;
       });
       _updateCart();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quantity updated for $itemName to $newQuantity'),
+          backgroundColor: Colors.teal,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -157,6 +169,14 @@ class _CartPageState extends State<CartPage> {
                               const SizedBox(height: 4),
                               Text(
                                 'Size: ${item['size']}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Quantity: ${item['quantity']}',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],

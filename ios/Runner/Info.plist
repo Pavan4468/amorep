@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>OneSignalAppId</key>
+    <string>71fc2c4f-dd2d-4556-8d41-830298f312b7</string>
+
 </dict>
 </plist>

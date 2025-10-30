@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:video_player/video_player.dart';
 import 'adspay.dart'; // Import the adpay.dart file
 
 class UploadPage extends StatefulWidget {
@@ -187,6 +188,7 @@ class _UploadPageState extends State<UploadPage> {
             'time': DateTime.now().toIso8601String(),
             'content': _imageDescriptionController.text,
             'image': imageUrl,
+            'userId': user.uid,
             'likes': 0,
             'commentsCount': 0,
             'isLiked': false,
@@ -716,6 +718,65 @@ class _UploadPageState extends State<UploadPage> {
                     ),
                   ),
                 ),
+                // Ads Tutorial Button
+                FadeInUp(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VideoPlayerPage(
+                            videoUrl:
+                                'https://firebasestorage.googleapis.com/v0/b/teacher-4e3b3.appspot.com/o/fabiok.mp4?alt=media&token=91eeca4d-7662-4c28-8b86-8a46a3eb97b6',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: padding,
+                        vertical: padding * 0.5,
+                      ),
+                      padding: EdgeInsets.all(padding),
+                      width: screenWidth * 0.92,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFD700)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12 * fontScale),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            blurRadius: 8 * fontScale,
+                            offset: Offset(0, 4 * fontScale),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_circle_fill,
+                            color: Colors.white,
+                            size: 24 * fontScale,
+                          ),
+                          SizedBox(width: padding * 0.5),
+                          Text(
+                            'Ads Tutorial',
+                            style: TextStyle(
+                              fontSize: 16 * fontScale,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 FadeInUp(
                   child: Padding(
                     padding: EdgeInsets.all(padding),
@@ -792,6 +853,91 @@ class _UploadPageState extends State<UploadPage> {
             fontWeight: FontWeight.w600,
             fontSize: 16 * fontScale,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// New Video Player Page
+class VideoPlayerPage extends StatefulWidget {
+  final String videoUrl;
+
+  const VideoPlayerPage({Key? key, required this.videoUrl}) : super(key: key);
+
+  @override
+  _VideoPlayerPageState createState() => _VideoPlayerPageState();
+}
+
+class _VideoPlayerPageState extends State<VideoPlayerPage> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {
+          _isInitialized = true;
+        });
+        _controller.setLooping(true);
+        _controller.play();
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Center(
+          child: _isInitialized
+              ? Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    ),
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    Center(
+                      child: IconButton(
+                        icon: Icon(
+                          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 60,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if (_controller.value.isPlaying) {
+                              _controller.pause();
+                            } else {
+                              _controller.play();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                )
+              : const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
         ),
       ),
     );

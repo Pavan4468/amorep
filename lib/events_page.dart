@@ -13,12 +13,12 @@ class EventsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           "Upcoming Events",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black,),
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        //centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('events').snapshots(),

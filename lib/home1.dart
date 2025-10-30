@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import 'LearnVideo.dart';
 import 'posts.dart';
 import 'SearchPage.dart';
@@ -27,7 +28,7 @@ const Map<String, Map<String, String>> translations = {
     'Posts': 'Posts',
     'Ads': 'Ads',
     'Users': 'Users',
-    'SVGs': 'SVGs',
+    'SDGs': 'SDGs',
     'Categories': 'Categories',
     'Upcoming Events': 'Upcoming Events',
     'See More': 'See More',
@@ -35,12 +36,13 @@ const Map<String, Map<String, String>> translations = {
     'No posts available': 'No posts available',
     'No ads available': 'No ads available',
     'No users available': 'No users available',
-    'No SVGs available': 'No SVGs available',
+    'No SDGs available': 'No SDGs available',
     'No events available': 'No events available',
     'Explore Now': 'Explore Now',
     'Men\'s Fashion': 'Men\'s Fashion',
     'Women\'s Fashion': 'Women\'s Fashion',
     'Kids\' Fashion': 'Kids\' Fashion',
+    'Green Products': 'Green Products',
     'Could not open donation link': 'Could not open donation link',
     'Could not open URL': 'Could not open URL',
     'Check out this video!': 'Check out this video!',
@@ -64,7 +66,7 @@ const Map<String, Map<String, String>> translations = {
     'Posts': 'Post',
     'Ads': 'Annunci',
     'Users': 'Utenti',
-    'SVGs': 'SVG',
+    'SDGs': 'OSS',
     'Categories': 'Categorie',
     'Upcoming Events': 'Eventi in arrivo',
     'See More': 'Vedi altro',
@@ -72,12 +74,13 @@ const Map<String, Map<String, String>> translations = {
     'No posts available': 'Nessun post disponibile',
     'No ads available': 'Nessun annuncio disponibile',
     'No users available': 'Nessun utente disponibile',
-    'No SVGs available': 'Nessun SVG disponibile',
+    'No SDGs available': 'Nessun OSS disponibile',
     'No events available': 'Nessun evento disponibile',
     'Explore Now': 'Esplora ora',
     'Men\'s Fashion': 'Moda uomo',
     'Women\'s Fashion': 'Moda donna',
     'Kids\' Fashion': 'Moda bambini',
+    'Green Products': 'Prodotti Verdi',
     'Could not open donation link': 'Impossibile aprire il link per la donazione',
     'Could not open URL': 'Impossibile aprire l\'URL',
     'Check out this video!': 'Guarda questo video!',
@@ -101,20 +104,21 @@ const Map<String, Map<String, String>> translations = {
     'Posts': 'Beiträge',
     'Ads': 'Anzeigen',
     'Users': 'Nutzer',
-    'SVGs': 'SVGs',
+    'SDGs': 'SDGs',
     'Categories': 'Kategorien',
-    'Upcoming Events': 'Kommende Veranstaltungen',
+    'Upcoming Events': 'Bald Events',
     'See More': 'Mehr sehen',
     'No videos available': 'Keine Videos verfügbar',
     'No posts available': 'Keine Beiträge verfügbar',
     'No ads available': 'Keine Anzeigen verfügbar',
     'No users available': 'Keine Nutzer verfügbar',
-    'No SVGs available': 'Keine SVGs verfügbar',
+    'No SDGs available': 'Keine SDGs verfügbar',
     'No events available': 'Keine Veranstaltungen verfügbar',
     'Explore Now': 'Jetzt erkunden',
     'Men\'s Fashion': 'Herrenmode',
     'Women\'s Fashion': 'Damenmode',
     'Kids\' Fashion': 'Kindermode',
+    'Green Products': 'Grüne Produkte',
     'Could not open donation link': 'Spendenlink konnte nicht geöffnet werden',
     'Could not open URL': 'URL konnte nicht geöffnet werden',
     'Check out this video!': 'Schau dir dieses Video an!',
@@ -138,20 +142,21 @@ const Map<String, Map<String, String>> translations = {
     'Posts': 'Publications',
     'Ads': 'Annonces',
     'Users': 'Utilisateurs',
-    'SVGs': 'ODD',
+    'SDGs': 'ODD',
     'Categories': 'Catégories',
-    'Upcoming Events': 'Événements à venir',
+    'Upcoming Events': 'À venir.',
     'See More': 'Voir plus',
     'No videos available': 'Aucune vidéo disponible',
     'No posts available': 'Aucune publication disponible',
     'No ads available': 'Aucune annonce disponible',
     'No users available': 'Aucun utilisateur disponible',
-    'No SVGs available': 'Aucun ODD disponible',
+    'No SDGs available': 'Aucun ODD disponible',
     'No events available': 'Aucun événement disponible',
     'Explore Now': 'Explorer maintenant',
     'Men\'s Fashion': 'Mode homme',
     'Women\'s Fashion': 'Mode femme',
     'Kids\' Fashion': 'Mode enfants',
+    'Green Products': 'Produits Verts',
     'Could not open donation link': 'Impossible d\'ouvrir le lien de don',
     'Could not open URL': 'Impossible d\'ouvrir l\'URL',
     'Check out this video!': 'Regardez cette vidéo !',
@@ -203,7 +208,7 @@ class _VideoScreenState extends State<VideoScreen> {
   final List<Map<String, dynamic>> categories = [
     {
       'name': 'Men\'s Fashion',
-      'image': 'https://plus.unsplash.com/premium_photo-1661326297568-65045688d10a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bWVucyUyMGZhc2hpb258ZW58MHx8MHx8fDA%3D',
+      'image': 'https://plus.unsplash.com/premium_photo-1675130119426-0b2c2379a190?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzN8fG1lbnMlMjBmYXNoaW9ufGVufDB8fDB8fHww',
       'page': const CategoriesPage(),
     },
     {
@@ -215,6 +220,11 @@ class _VideoScreenState extends State<VideoScreen> {
       'name': 'Kids\' Fashion',
       'image': 'https://plus.unsplash.com/premium_photo-1661274061055-6f6d0f110ba6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGtpZHMlMjBmYXNoaW9ufGVufDB8fDB8fHww',
       'page': const KidsProductsPage(),
+    },
+    {
+      'name': 'Green Products',
+      'image': 'https://plus.unsplash.com/premium_photo-1664811569310-04a7c276df1c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8ZW52aXJvbm1lbnR8ZW58MHx8MHx8fDA%3D',
+      'page': const KidsProductsPage(), // Placeholder; replace with GreenProductsPage if defined
     },
   ];
 
@@ -263,13 +273,13 @@ class _VideoScreenState extends State<VideoScreen> {
                 }, screenWidth),
                 _buildUsersList(screenHeight, screenWidth),
                 SizedBox(height: screenHeight * 0.02),
-                _sectionTitle(translations[selectedLanguage]!['SVGs']!, () {
+                _sectionTitle(translations[selectedLanguage]!['SDGs']!, () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => HumanityApp()),
                   );
                 }, screenWidth),
-                _buildSvgList(screenHeight, screenWidth),
+                _buildSdgList(screenHeight, screenWidth),
                 SizedBox(height: screenHeight * 0.02),
                 _sectionTitle(translations[selectedLanguage]!['Categories']!, () {
                   Navigator.push(
@@ -286,6 +296,7 @@ class _VideoScreenState extends State<VideoScreen> {
                   );
                 }, screenWidth),
                 _buildUpcomingEventsList(screenHeight, screenWidth),
+                SizedBox(height: screenHeight * 0.04), // Increased gap after Upcoming Events
               ],
             ),
           ),
@@ -472,9 +483,14 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   Widget _buildPostsList(double screenHeight, double screenWidth) {
+    final isLargeScreen = screenWidth >= 600;
+    final cardWidth = isLargeScreen ? screenWidth * 0.45 : screenWidth * 0.4;
+    final imageHeight = isLargeScreen ? screenHeight * 0.18 : screenHeight * 0.14;
+    final fontSize = isLargeScreen ? screenWidth * 0.04 : screenWidth * 0.035;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.20,
+        maxHeight: screenHeight * 0.24, // Reduced height
         minHeight: 100,
       ),
       child: StreamBuilder<QuerySnapshot>(
@@ -502,11 +518,11 @@ class _VideoScreenState extends State<VideoScreen> {
                   );
                 },
                 child: Container(
-                  width: screenWidth * 0.32,
-                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
+                  width: cardWidth,
+                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
                   decoration: BoxDecoration(
                     color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black54,
@@ -518,20 +534,21 @@ class _VideoScreenState extends State<VideoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: screenHeight * 0.015), // Added spacing at the top
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
                         child: CachedNetworkImage(
                           imageUrl: post['image'] ?? '',
-                          height: screenHeight * 0.12,
+                          height: imageHeight,
                           width: double.infinity,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           placeholder: (context, url) => CircularProgressIndicator(color: Colors.amber),
                           errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.white),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsets.all(screenWidth * 0.01),
+                          padding: EdgeInsets.all(screenWidth * 0.015),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -539,7 +556,7 @@ class _VideoScreenState extends State<VideoScreen> {
                               Text(
                                 post['user'] ?? '',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.03,
+                                  fontSize: fontSize,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -563,10 +580,13 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   Widget _buildAdsList(double screenHeight, double screenWidth) {
+    final isLargeScreen = screenWidth >= 600;
+    final imageHeight = isLargeScreen ? screenHeight * 0.18 : screenHeight * 0.14;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.18,
-        minHeight: 80,
+        maxHeight: screenHeight * 0.24, // Reduced height
+        minHeight: 100,
       ),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('ads').snapshots(),
@@ -592,11 +612,11 @@ class _VideoScreenState extends State<VideoScreen> {
                   );
                 },
                 child: Container(
-                  width: screenWidth * 0.32,
-                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
+                  width: screenWidth * 0.4,
+                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
                   decoration: BoxDecoration(
                     color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black54,
@@ -608,11 +628,12 @@ class _VideoScreenState extends State<VideoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: screenHeight * 0.015), // Added spacing at the top
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
                         child: CachedNetworkImage(
                           imageUrl: ad['image'] ?? '',
-                          height: screenHeight * 0.09,
+                          height: imageHeight,
                           width: double.infinity,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => CircularProgressIndicator(color: Colors.amber),
@@ -620,14 +641,14 @@ class _VideoScreenState extends State<VideoScreen> {
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.all(screenWidth * 0.01),
+                        padding: EdgeInsets.all(screenWidth * 0.015),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               ad['title'] ?? '',
                               style: TextStyle(
-                                fontSize: screenWidth * 0.03,
+                                fontSize: screenWidth * 0.035,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -715,7 +736,7 @@ class _VideoScreenState extends State<VideoScreen> {
     );
   }
 
-  Widget _buildSvgList(double screenHeight, double screenWidth) {
+  Widget _buildSdgList(double screenHeight, double screenWidth) {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.18,
@@ -728,19 +749,19 @@ class _VideoScreenState extends State<VideoScreen> {
             return Center(child: CircularProgressIndicator(color: Colors.amber));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text(translations[selectedLanguage]!['No SVGs available']!, style: TextStyle(color: Colors.white)));
+            return Center(child: Text(translations[selectedLanguage]!['No SDGs available']!, style: TextStyle(color: Colors.white)));
           }
           return ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var svg = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+              var sdg = snapshot.data!.docs[index].data() as Map<String, dynamic>;
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SvgDetailPage(svg: svg, language: selectedLanguage),
+                      builder: (context) => SdgDetailPage(sdg: sdg, language: selectedLanguage),
                     ),
                   );
                 },
@@ -764,7 +785,7 @@ class _VideoScreenState extends State<VideoScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(15),
                         child: CachedNetworkImage(
-                          imageUrl: svg['image'] ?? '',
+                          imageUrl: sdg['image'] ?? '',
                           height: screenHeight * 0.08,
                           width: screenHeight * 0.08,
                           fit: BoxFit.contain,
@@ -774,7 +795,7 @@ class _VideoScreenState extends State<VideoScreen> {
                       ),
                       SizedBox(height: screenHeight * 0.005),
                       Text(
-                        svg['title'] ?? '',
+                        sdg['title'] ?? '',
                         style: TextStyle(
                           fontSize: screenWidth * 0.03,
                           fontWeight: FontWeight.w600,
@@ -795,6 +816,9 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   Widget _buildFashionCategoriesList(double screenHeight, double screenWidth) {
+    final isLargeScreen = screenWidth >= 600;
+    final imageHeight = isLargeScreen ? screenHeight * 0.18 : screenHeight * 0.14;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.28,
@@ -815,11 +839,11 @@ class _VideoScreenState extends State<VideoScreen> {
               );
             },
             child: Container(
-              width: screenWidth * 0.32,
-              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
+              width: screenWidth * 0.4,
+              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
               decoration: BoxDecoration(
                 color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black54,
@@ -831,11 +855,12 @@ class _VideoScreenState extends State<VideoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  SizedBox(height: screenHeight * 0.015), // Added spacing at the top
                   ClipRRect(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                    borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
                       imageUrl: category['image'] ?? '',
-                      height: screenHeight * 0.14,
+                      height: imageHeight,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => CircularProgressIndicator(color: Colors.amber),
@@ -850,7 +875,7 @@ class _VideoScreenState extends State<VideoScreen> {
                         Text(
                           translations[selectedLanguage]![category['name']] ?? category['name'],
                           style: TextStyle(
-                            fontSize: screenWidth * 0.03,
+                            fontSize: screenWidth * 0.035,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -879,10 +904,13 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   Widget _buildUpcomingEventsList(double screenHeight, double screenWidth) {
+    final isLargeScreen = screenWidth >= 600;
+    final imageHeight = isLargeScreen ? screenHeight * 0.18 : screenHeight * 0.14;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: screenHeight * 0.28,
-        minHeight: 120,
+        maxHeight: screenHeight * 0.24, // Reduced height
+        minHeight: 100,
       ),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('events').snapshots(),
@@ -908,11 +936,11 @@ class _VideoScreenState extends State<VideoScreen> {
                   );
                 },
                 child: Container(
-                  width: screenWidth * 0.32,
-                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
+                  width: screenWidth * 0.4,
+                  margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
                   decoration: BoxDecoration(
                     color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black54,
@@ -924,11 +952,12 @@ class _VideoScreenState extends State<VideoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: screenHeight * 0.015), // Added spacing at the top
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
                         child: CachedNetworkImage(
                           imageUrl: event['image'] ?? '',
-                          height: screenHeight * 0.14,
+                          height: imageHeight,
                           width: double.infinity,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => CircularProgressIndicator(color: Colors.amber),
@@ -943,7 +972,7 @@ class _VideoScreenState extends State<VideoScreen> {
                             Text(
                               event['name'] ?? '',
                               style: TextStyle(
-                                fontSize: screenWidth * 0.03,
+                                fontSize: screenWidth * 0.035,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -1057,208 +1086,360 @@ class _VideoCardState extends State<VideoCard> {
         String views = video['views']?.toString() ?? '0';
         String time = video['time']?.toDate().toString() ?? '';
 
-        return Container(
-          width: widget.screenWidth * 0.5,
-          margin: EdgeInsets.symmetric(horizontal: widget.screenWidth * 0.01),
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black54,
-                blurRadius: 4,
-                offset: Offset(0, 2),
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullScreenVideoPage(videoUrl: widget.videoUrl),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: _controller.value.isInitialized
-                      ? GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _controller.value.isPlaying
-                                  ? _controller.pause()
-                                  : _controller.play();
-                            });
-                          },
-                          child: Stack(
+            );
+          },
+          child: Container(
+            width: widget.screenWidth * 0.5,
+            margin: EdgeInsets.symmetric(horizontal: widget.screenWidth * 0.01),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: _controller.value.isInitialized
+                        ? Stack(
                             alignment: Alignment.center,
                             children: [
                               VideoPlayer(_controller),
-                              if (!_controller.value.isPlaying)
-                                Icon(
-                                  Icons.play_circle_fill,
-                                  color: Colors.amber.withOpacity(0.8),
-                                  size: widget.screenWidth * 0.1,
-                                ),
+                              Icon(
+                                Icons.play_circle_fill,
+                                color: Colors.amber.withOpacity(0.8),
+                                size: widget.screenWidth * 0.1,
+                              ),
                             ],
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: widget.thumbnail,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                CircularProgressIndicator(color: Colors.amber),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error, color: Colors.white),
                           ),
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: widget.thumbnail,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              CircularProgressIndicator(color: Colors.amber),
-                          errorWidget: (context, url, error) =>
-                              Icon(Icons.error, color: Colors.white),
-                        ),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(widget.screenWidth * 0.015),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontSize: widget.screenWidth * 0.03,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: widget.screenWidth * 0.01),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _controller.value.isPlaying
-                                  ? _controller.pause()
-                                  : _controller.play();
-                            });
-                          },
-                          child: Icon(
-                            _controller.value.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            color: Colors.amber,
-                            size: widget.screenWidth * 0.05,
-                          ),
+                Padding(
+                  padding: EdgeInsets.all(widget.screenWidth * 0.015),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          fontSize: widget.screenWidth * 0.03,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        GestureDetector(
-                          onTap: () async {
-                            final user = FirebaseAuth.instance.currentUser;
-                            if (user != null) {
-                              if (isLiked) {
-                                await FirebaseFirestore.instance
-                                    .collection('videos')
-                                    .doc(widget.videoId)
-                                    .collection('likes')
-                                    .doc(user.uid)
-                                    .delete();
-                                await FirebaseFirestore.instance
-                                    .collection('videos')
-                                    .doc(widget.videoId)
-                                    .update({
-                                  'likes': FieldValue.increment(-1),
-                                });
-                              } else {
-                                await FirebaseFirestore.instance
-                                    .collection('videos')
-                                    .doc(widget.videoId)
-                                    .collection('likes')
-                                    .doc(user.uid)
-                                    .set({});
-                                await FirebaseFirestore.instance
-                                    .collection('videos')
-                                    .doc(widget.videoId)
-                                    .update({
-                                  'likes': FieldValue.increment(1),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: widget.screenWidth * 0.01),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _controller.value.isPlaying
+                                    ? _controller.pause()
+                                    : _controller.play();
+                              });
+                            },
+                            child: Icon(
+                              _controller.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.amber,
+                              size: widget.screenWidth * 0.05,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final user = FirebaseAuth.instance.currentUser;
+                              if (user != null) {
+                                if (isLiked) {
+                                  await FirebaseFirestore.instance
+                                      .collection('videos')
+                                      .doc(widget.videoId)
+                                      .collection('likes')
+                                      .doc(user.uid)
+                                      .delete();
+                                  await FirebaseFirestore.instance
+                                      .collection('videos')
+                                      .doc(widget.videoId)
+                                      .update({
+                                    'likes': FieldValue.increment(-1),
+                                  });
+                                } else {
+                                  await FirebaseFirestore.instance
+                                      .collection('videos')
+                                      .doc(widget.videoId)
+                                      .collection('likes')
+                                      .doc(user.uid)
+                                      .set({});
+                                  await FirebaseFirestore.instance
+                                      .collection('videos')
+                                      .doc(widget.videoId)
+                                      .update({
+                                    'likes': FieldValue.increment(1),
+                                  });
+                                }
+                                setState(() {
+                                  isLiked = !isLiked;
                                 });
                               }
-                              setState(() {
-                                isLiked = !isLiked;
-                              });
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.favorite,
-                                color: isLiked ? Colors.red : Colors.amber,
-                                size: widget.screenWidth * 0.05,
-                              ),
-                              SizedBox(width: widget.screenWidth * 0.01),
-                              Text(
-                                likes.toString(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: widget.screenWidth * 0.03,
+                            },
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.favorite,
+                                  color: isLiked ? Colors.red : Colors.amber,
+                                  size: widget.screenWidth * 0.05,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: widget.screenWidth * 0.01),
+                                Text(
+                                  likes.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: widget.screenWidth * 0.03,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            final url = Uri.parse(
-                                'https://buy.stripe.com/5kA5msaRAghndvW296');
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(translations[widget.language]!['Could not open donation link']!),
-                                  backgroundColor: Colors.amber,
-                                ),
+                          GestureDetector(
+                            onTap: () async {
+                              final url = Uri.parse(
+                                  'https://buy.stripe.com/5kA5msaRAghndvW296');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(translations[widget.language]!['Could not open donation link']!),
+                                    backgroundColor: Colors.amber,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Icon(
+                              Icons.volunteer_activism,
+                              color: Colors.amber,
+                              size: widget.screenWidth * 0.05,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Share.share(
+                                '${widget.title}\n${widget.subtitle}\n${translations[widget.language]!['Check out this video!']} ${widget.videoUrl}',
                               );
-                            }
-                          },
-                          child: Icon(
-                            Icons.volunteer_activism,
-                            color: Colors.amber,
-                            size: widget.screenWidth * 0.05,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Share.share(
-                              '${widget.title}\n${widget.subtitle}\n${translations[widget.language]!['Check out this video!']} ${widget.videoUrl}',
-                              subject: translations[widget.language]!['Check out this video!'],
-                            );
-                            FirebaseFirestore.instance
-                                .collection('videos')
-                                .doc(widget.videoId)
-                                .update({
-                              'shares': FieldValue.increment(1),
-                            });
-                          },
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.share,
-                                color: Colors.amber,
-                                size: widget.screenWidth * 0.05,
-                              ),
-                              SizedBox(width: widget.screenWidth * 0.01),
-                              Text(
-                                shares.toString(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: widget.screenWidth * 0.03,
+                              FirebaseFirestore.instance
+                                  .collection('videos')
+                                  .doc(widget.videoId)
+                                  .update({
+                                'shares': FieldValue.increment(1),
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.share,
+                                  color: Colors.amber,
+                                  size: widget.screenWidth * 0.05,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: widget.screenWidth * 0.01),
+                                Text(
+                                  shares.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: widget.screenWidth * 0.03,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class FullScreenVideoPage extends StatefulWidget {
+  final String videoUrl;
+
+  const FullScreenVideoPage({required this.videoUrl});
+
+  @override
+  _FullScreenVideoPageState createState() => _FullScreenVideoPageState();
+}
+
+class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
+  late VideoPlayerController _controller;
+  bool _isPlaying = false;
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+        _isPlaying = true;
+      });
+
+    _controller.addListener(() {
+      if (_controller.value.position == _controller.value.duration) {
+        setState(() {
+          _isPlaying = false;
+        });
+      }
+    });
+
+    // Hide controls after 3 seconds
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      if (_isPlaying) {
+        _controller.pause();
+      } else {
+        _controller.play();
+      }
+      _isPlaying = !_isPlaying;
+      _showControls = true;
+      Future.delayed(Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _showControls = false;
+          });
+        }
+      });
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+      if (_showControls) {
+        Future.delayed(Duration(seconds: 3), () {
+          if (mounted) {
+            setState(() {
+              _showControls = false;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        onTap: _toggleControls,
+        child: Center(
+          child: _controller.value.isInitialized
+              ? Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    ),
+                    if (_showControls)
+                      Align(
+                        alignment: Alignment.center,
+                        child: IconButton(
+                          icon: Icon(
+                            _isPlaying ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white.withOpacity(0.8),
+                            size: 64,
+                          ),
+                          onPressed: _togglePlayPause,
+                        ),
+                      ),
+                    if (_showControls)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: VideoProgressIndicator(
+                          _controller,
+                          allowScrubbing: true,
+                          colors: VideoProgressColors(
+                            playedColor: Colors.amber,
+                            bufferedColor: Colors.grey,
+                            backgroundColor: Colors.black,
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        ),
+                      ),
+                    if (_showControls)
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_back, color: Colors.white, size: 32),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                  ],
+                )
+              : CircularProgressIndicator(color: Colors.amber),
+        ),
+      ),
     );
   }
 }
@@ -1761,11 +1942,11 @@ class UserDetailPage extends StatelessWidget {
   }
 }
 
-class SvgDetailPage extends StatelessWidget {
-  final Map<String, dynamic> svg;
+class SdgDetailPage extends StatelessWidget {
+  final Map<String, dynamic> sdg;
   final String language;
 
-  SvgDetailPage({required this.svg, required this.language});
+  SdgDetailPage({required this.sdg, required this.language});
 
   @override
   Widget build(BuildContext context) {
@@ -1816,7 +1997,7 @@ class SvgDetailPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.grey[900],
         title: Text(
-          svg['title'] ?? translations[language]!['Sustainable Development Goal'],
+          sdg['title'] ?? translations[language]!['Sustainable Development Goal'],
           style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.04),
         ),
         leading: IconButton(
@@ -1832,7 +2013,7 @@ class SvgDetailPage extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: CachedNetworkImage(
-                imageUrl: svg['image'] ?? '',
+                imageUrl: sdg['image'] ?? '',
                 height: imageHeight,
                 width: double.infinity,
                 fit: BoxFit.contain,
@@ -1848,7 +2029,7 @@ class SvgDetailPage extends StatelessWidget {
             ),
             SizedBox(height: padding),
             Text(
-              svg['title'] ?? translations[language]!['No Title']!,
+              sdg['title'] ?? translations[language]!['No Title']!,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: titleFontSize,
@@ -1857,7 +2038,7 @@ class SvgDetailPage extends StatelessWidget {
             ),
             SizedBox(height: padding / 2),
             Text(
-              svg['description'] ?? translations[language]!['No description available']!,
+              sdg['description'] ?? translations[language]!['No description available']!,
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: descriptionFontSize,
@@ -1880,7 +2061,7 @@ class SvgDetailPage extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(15),
                     child: CachedNetworkImage(
-                      imageUrl: svg['company_logo'] ??
+                      imageUrl: sdg['company_logo'] ??
                           'https://via.placeholder.com/150?text=Default+Logo',
                       height: logoSize * 1.6,
                       width: logoSize * 1.6,
@@ -1910,7 +2091,7 @@ class SvgDetailPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () async {
-                  final url = Uri.parse(svg['link'] ?? '');
+                  final url = Uri.parse(sdg['link'] ?? '');
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   } else {

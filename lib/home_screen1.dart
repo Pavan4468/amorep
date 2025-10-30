@@ -159,7 +159,7 @@ class _MainPageState extends State<MainPage> {
               ListTile(
                 leading: Icon(Icons.volunteer_activism, color: Colors.grey[800]),
                 title: const Text(
-                  'Humanity',
+                  'SDGs',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 16.0,

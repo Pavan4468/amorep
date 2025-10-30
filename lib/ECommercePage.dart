@@ -73,7 +73,7 @@ class EShoppingHomePageState extends State<EShoppingHomePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${product['name']} (Size: $selectedSize) added to cart'),
-        backgroundColor: Colors.teal,
+        //backgroundColor: Colors.teal,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
       ),
@@ -239,8 +239,8 @@ class EShoppingHomePageState extends State<EShoppingHomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('AMO'),
-        backgroundColor: Colors.teal,
+       title: const Text('Shopping'),
+        //backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: badges.Badge(
