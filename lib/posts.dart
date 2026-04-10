@@ -132,32 +132,86 @@ class _PostsPageState extends State<PostsPage> {
     }
   }
 
-  void _addComment(String postId, String commentText) {
+  Future<void> _addComment(String postId, String commentText) async {
     if (commentText.trim().isEmpty) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    final userName = user?.displayName ?? 'Anonymous';
-    final userProfile = user?.photoURL ?? 'https://i.pravatar.cc/150?img=0';
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to comment.', style: TextStyle(color: Colors.black)),
+          backgroundColor: Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    FirebaseFirestore.instance.collection('posts').doc(postId).update({
-      'comments': FieldValue.arrayUnion([
-        {
-          'user': userName,
-          'profile': userProfile,
-          'text': commentText.trim(),
-          'time': DateTime.now().toIso8601String(),
-        }
-      ]),
-      'commentsCount': FieldValue.increment(1),
-    });
+    final userId = user.uid;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Comment added!', style: TextStyle(color: Colors.black)),
-        backgroundColor: Color(0xFFD4AF37),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      // Get post details first to get the post owner
+      final postDoc = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
+      if (!postDoc.exists) {
+        throw Exception('Post does not exist');
+      }
+      
+      final postData = postDoc.data()!;
+      final postOwnerId = postData['userId'];
+      
+      // Get user details for comment
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final userName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Anonymous') : 'Anonymous';
+      final userProfile = userDoc.exists 
+          ? (userDoc.data()!['profileImageUrl'] ?? 'https://i.pravatar.cc/150?img=0')
+          : 'https://i.pravatar.cc/150?img=0';
+
+      // Add the comment
+      await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+        'comments': FieldValue.arrayUnion([
+          {
+            'userId': userId,
+            'user': userName,
+            'profile': userProfile,
+            'text': commentText.trim(),
+            'time': DateTime.now().toIso8601String(),
+          }
+        ]),
+        'commentsCount': FieldValue.increment(1),
+      });
+
+      // Create a notification for the post owner (only if it's not their own post)
+      if (postOwnerId != userId) {
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'type': 'comment',
+          'postId': postId,
+          'userId': postOwnerId,
+          'commenterId': userId,
+          'commenterName': userName,
+          'commenterProfile': userProfile,
+          'commentText': commentText.trim(),
+          'message': '$userName commented on your post: "${commentText.trim()}"',
+          'timestamp': FieldValue.serverTimestamp(),
+          'read': false,
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comment added!', style: TextStyle(color: Colors.black)),
+          backgroundColor: Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add comment: $e', style: const TextStyle(color: Colors.black)),
+          backgroundColor: Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _sharePost(Map<String, dynamic> post) {
@@ -480,11 +534,23 @@ class _PostsPageState extends State<PostsPage> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.send, color: Color(0xFFD4AF37)),
-                          onPressed: () {
-                            _addComment(postId, commentController.text);
+                          onPressed: () async {
+                            // Call the async function and wait for it to complete
+                            await _addComment(postId, commentController.text);
                             commentController.clear();
+                            
+                            // Close the bottom sheet
                             Navigator.pop(context);
-                            _showComments(postId, post);
+                            
+                            // Reopen with updated comments
+                            final updatedPostDoc = await FirebaseFirestore.instance
+                                .collection('posts')
+                                .doc(postId)
+                                .get();
+                            if (updatedPostDoc.exists && mounted) {
+                              final updatedPost = updatedPostDoc.data() as Map<String, dynamic>;
+                              _showComments(postId, updatedPost);
+                            }
                           },
                         ),
                       ],

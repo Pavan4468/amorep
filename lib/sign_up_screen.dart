@@ -227,6 +227,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
       // Store user data in Firestore
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'uid': userCredential.user!.uid,
         'username': _usernameController.text.trim(),
         'email': _emailController.text.trim(),
         'income': _incomeController.text.trim(),
