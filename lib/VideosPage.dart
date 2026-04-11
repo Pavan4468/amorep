@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,14 +9,37 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 
-class ReelsPage extends StatefulWidget {
-  const ReelsPage({Key? key}) : super(key: key);
+import 'notification.dart';
 
-  @override
-  _ReelsPageState createState() => _ReelsPageState();
+/// Firestore may store [likedBy] as `List<String>` (uids) or legacy `List<Map>` (e.g. liker objects).
+List<String> _parseReelLikedBy(dynamic raw) {
+  if (raw == null) return [];
+  if (raw is! List) return [];
+  final out = <String>[];
+  for (final e in raw) {
+    if (e is String && e.isNotEmpty) {
+      out.add(e);
+    } else if (e is Map) {
+      final id = e['userId'] ?? e['uid'] ?? e['likerId'];
+      if (id is String && id.isNotEmpty) out.add(id);
+    }
+  }
+  return out;
 }
 
-class _ReelsPageState extends State<ReelsPage> {
+class ReelsPage extends StatefulWidget {
+  final void Function(String targetId, bool isReel)? onNotificationNavigate;
+
+  const ReelsPage({Key? key, this.onNotificationNavigate}) : super(key: key);
+
+  @override
+  ReelsPageState createState() => ReelsPageState();
+}
+
+class ReelsPageState extends State<ReelsPage> {
+  final PageController _pageController = PageController();
+  String? _pendingReelId;
+
   @override
   void initState() {
     super.initState();
@@ -26,9 +52,104 @@ class _ReelsPageState extends State<ReelsPage> {
   }
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// Opens the reel at this Firestore document id in the vertical feed.
+  void scrollToReel(String reelId) {
+    _pendingReelId = reelId;
+    setState(() {});
+  }
+
+  void _consumePendingReelScroll(List<dynamic> combinedItems) {
+    final pending = _pendingReelId;
+    if (pending == null) return;
+    for (var i = 0; i < combinedItems.length; i++) {
+      final item = combinedItems[i];
+      if (item is QueryDocumentSnapshot &&
+          item.reference.parent.id == 'reels' &&
+          item.id == pending) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pageController.hasClients) {
+            _pageController.jumpToPage(i);
+          }
+        });
+        _pendingReelId = null;
+        break;
+      }
+    }
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text(
+          'Reels',
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFD4AF37),
+          ),
+        ),
+        backgroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                .where('read', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data?.docs.length ?? 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Color(0xFFD4AF37)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsPage(
+                            onNavigateToContent: widget.onNotificationNavigate,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
@@ -81,7 +202,10 @@ class _ReelsPageState extends State<ReelsPage> {
                   }
                 }
 
+                _consumePendingReelScroll(combinedItems);
+
                 return PageView.builder(
+                  controller: _pageController,
                   scrollDirection: Axis.vertical,
                   itemCount: combinedItems.length,
                   itemBuilder: (context, index) {
@@ -101,7 +225,11 @@ class _ReelsPageState extends State<ReelsPage> {
                         debugPrint('Error parsing reel createdAt: $e');
                       }
                       return ReelItem(
+                        key: ValueKey(item.id),
                         reelId: item.id,
+                        reelOwnerId:
+                            data['createdBy'] ?? data['userId'] ?? '',
+                        likedBy: _parseReelLikedBy(data['likedBy']),
                         videoUrl: data["videoUrl"] ?? '',
                         username: data["user"] ?? 'Anonymous',
                         profilePic:
@@ -140,6 +268,10 @@ class _ReelsPageState extends State<ReelsPage> {
 
 class ReelItem extends StatefulWidget {
   final String reelId;
+  /// Firestore uid of the reel creator (`createdBy` from upload).
+  final String reelOwnerId;
+  /// Uids who liked this reel (persisted; drives filled heart when user returns).
+  final List<String> likedBy;
   final String videoUrl;
   final String username;
   final String profilePic;
@@ -152,6 +284,8 @@ class ReelItem extends StatefulWidget {
   const ReelItem({
     Key? key,
     required this.reelId,
+    required this.reelOwnerId,
+    required this.likedBy,
     required this.videoUrl,
     required this.username,
     required this.profilePic,
@@ -168,18 +302,45 @@ class ReelItem extends StatefulWidget {
 
 class _ReelItemState extends State<ReelItem> {
   late VideoPlayerController _controller;
-  bool _isLiked = false;
+  late bool _isLiked;
   late int _likeCount;
   late List<String> _comments;
   bool _showComments = false;
   bool _isVideoInitialized = false;
 
+  bool _isLikedFromWidget() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+    return widget.likedBy.contains(uid);
+  }
+
   @override
   void initState() {
     super.initState();
+    _isLiked = _isLikedFromWidget();
     _likeCount = widget.likes;
     _comments = widget.comments;
     _initializeVideo();
+  }
+
+  @override
+  void didUpdateWidget(ReelItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reelId != oldWidget.reelId) {
+      _isLiked = _isLikedFromWidget();
+      _likeCount = widget.likes;
+      _comments = List<String>.from(widget.comments);
+      return;
+    }
+    if (!listEquals(widget.likedBy, oldWidget.likedBy)) {
+      _isLiked = _isLikedFromWidget();
+    }
+    if (widget.likes != oldWidget.likes) {
+      _likeCount = widget.likes;
+    }
+    if (!listEquals(widget.comments, oldWidget.comments)) {
+      _comments = List<String>.from(widget.comments);
+    }
   }
 
   void _initializeVideo() {
@@ -212,23 +373,123 @@ class _ReelItemState extends State<ReelItem> {
   }
 
   void _toggleLike() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please sign in to like a reel.',
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Color(0xFFD4AF37),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final userId = user.uid;
+    final wasLiked = _isLiked;
+    final prevCount = _likeCount;
+
+    // Update heart immediately; network work runs after (was blocked on users doc fetch before).
     setState(() {
-      _isLiked = !_isLiked;
+      _isLiked = !wasLiked;
       _likeCount += _isLiked ? 1 : -1;
     });
+
     try {
-      await FirebaseFirestore.instance
-          .collection('reels')
-          .doc(widget.reelId)
-          .update({'likes': _likeCount});
+      if (wasLiked) {
+        await FirebaseFirestore.instance
+            .collection('reels')
+            .doc(widget.reelId)
+            .update({
+          'likes': FieldValue.increment(-1),
+          'likedBy': FieldValue.arrayRemove([userId]),
+        });
+      } else {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        if (!userDoc.exists) {
+          if (mounted) {
+            setState(() {
+              _isLiked = wasLiked;
+              _likeCount = prevCount;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'User data not found.',
+                  style: TextStyle(color: Colors.black),
+                ),
+                backgroundColor: Color(0xFFD4AF37),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+        await FirebaseFirestore.instance
+            .collection('reels')
+            .doc(widget.reelId)
+            .update({
+          'likes': FieldValue.increment(1),
+          'likedBy': FieldValue.arrayUnion([userId]),
+        });
+
+        final userData = userDoc.data()!;
+        final likerName = userData['name'] ?? 'Anonymous';
+        final likerProfile = userData['profileImageUrl'] ??
+            'https://i.pravatar.cc/150?img=0';
+
+        if (widget.reelOwnerId.isNotEmpty && widget.reelOwnerId != userId) {
+          await FirebaseFirestore.instance.collection('notifications').add({
+            'type': 'like',
+            'postId': widget.reelId,
+            'reelId': widget.reelId,
+            'targetType': 'reel',
+            'userId': widget.reelOwnerId,
+            'likerId': userId,
+            'likerName': likerName,
+            'likerProfile': likerProfile,
+            'message': '$likerName liked your Reel',
+            'timestamp': FieldValue.serverTimestamp(),
+            'read': false,
+          });
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              wasLiked ? 'Reel unliked!' : 'Reel liked!',
+              style: const TextStyle(color: Colors.black),
+            ),
+            backgroundColor: const Color(0xFFD4AF37),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _isLiked = !_isLiked;
-        _likeCount += _isLiked ? 1 : -1;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update like: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          _isLiked = wasLiked;
+          _likeCount = prevCount;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to update like: $e',
+              style: const TextStyle(color: Colors.black),
+            ),
+            backgroundColor: const Color(0xFFD4AF37),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

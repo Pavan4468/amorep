@@ -14,13 +14,16 @@ import 'likes_page.dart';
 
 
 class PostsPage extends StatefulWidget {
-  const PostsPage({Key? key}) : super(key: key);
+  /// When set (e.g. from [MainPage]), notification taps switch tab and open the target.
+  final void Function(String targetId, bool isReel)? onNotificationNavigate;
+
+  PostsPage({Key? key, this.onNotificationNavigate}) : super(key: key);
 
   @override
-  _PostsPageState createState() => _PostsPageState();
+  PostsPageState createState() => PostsPageState();
 }
 
-class _PostsPageState extends State<PostsPage> {
+class PostsPageState extends State<PostsPage> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
   final ScrollController _scrollController = ScrollController();
   final Map<String, int> _postIndices = {};
@@ -102,6 +105,7 @@ class _PostsPageState extends State<PostsPage> {
             await FirebaseFirestore.instance.collection('notifications').add({
               'type': 'like',
               'postId': postId,
+              'targetType': 'post',
               'userId': postOwnerId,
               'likerId': userId,
               'likerName': userName,
@@ -185,6 +189,7 @@ class _PostsPageState extends State<PostsPage> {
         await FirebaseFirestore.instance.collection('notifications').add({
           'type': 'comment',
           'postId': postId,
+          'targetType': 'post',
           'userId': postOwnerId,
           'commenterId': userId,
           'commenterName': userName,
@@ -359,7 +364,7 @@ class _PostsPageState extends State<PostsPage> {
   }
 
   void _onRefresh() async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 400));
     _refreshController.refreshCompleted();
   }
 
@@ -568,6 +573,9 @@ class _PostsPageState extends State<PostsPage> {
     });
   }
 
+  /// Open this post in the list (used from notifications via [MainPage]).
+  void scrollToPost(String postId) => _navigateToPost(postId);
+
   void _navigateToPost(String postId) {
     if (_postIndices.containsKey(postId)) {
       final index = _postIndices[postId]! + (_postIndices[postId]! ~/ 3); // Adjust for ads
@@ -580,13 +588,13 @@ class _PostsPageState extends State<PostsPage> {
         curve: Curves.easeInOut,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Post $postId not found in current view'),
-          backgroundColor: const Color(0xFFD4AF37),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Post $postId not found in current view'),
+      //     backgroundColor: const Color(0xFFD4AF37),
+      //     behavior: SnackBarBehavior.floating,
+      //   ),
+      // );
     }
   }
 
@@ -632,6 +640,7 @@ class _PostsPageState extends State<PostsPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => NotificationsPage(
+                            onNavigateToContent: widget.onNotificationNavigate,
                             onNavigateToPost: _navigateToPost,
                           ),
                         ),
@@ -690,7 +699,8 @@ class _PostsPageState extends State<PostsPage> {
           stream: FirebaseFirestore.instance
               .collection('posts')
               .orderBy('time', descending: true)
-              .snapshots(),
+              .limit(100)
+              .snapshots(includeMetadataChanges: false),
           builder: (context, postSnapshot) {
             if (postSnapshot.hasError) {
               debugPrint('Post snapshot error: ${postSnapshot.error}');
@@ -701,7 +711,13 @@ class _PostsPageState extends State<PostsPage> {
                 ),
               );
             }
-            if (postSnapshot.connectionState == ConnectionState.waiting) {
+            // Avoid replacing the whole list with a spinner on every stream reconnect/update.
+            if (postSnapshot.connectionState == ConnectionState.waiting &&
+                !postSnapshot.hasData) {
+              return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
+            }
+            if (!postSnapshot.hasData) {
               return const Center(
                   child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
             }
@@ -722,39 +738,35 @@ class _PostsPageState extends State<PostsPage> {
             posts.asMap().forEach((i, doc) => _postIndices[doc.id] = i);
 
             return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('ads').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('ads')
+                  .snapshots(includeMetadataChanges: false),
               builder: (context, adSnapshot) {
                 if (adSnapshot.hasError) {
                   debugPrint('Ad snapshot error: ${adSnapshot.error}');
-                  return const Center(
-                    child: Text(
-                      'Error loading ads',
-                      style: TextStyle(color: Color(0xFFF5E6CC)),
-                    ),
-                  );
                 }
-                if (adSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
-                }
-                final ads = adSnapshot.data!.docs;
+                final ads = adSnapshot.data?.docs ?? [];
+                final insertAds = ads.isNotEmpty;
+                final itemCount = insertAds
+                    ? posts.length + (posts.length ~/ 3)
+                    : posts.length;
                 debugPrint('Fetched ${ads.length} ads');
 
                 return ListView.builder(
+                  key: const PageStorageKey<String>('posts_feed_list'),
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16.0),
-                  itemCount: posts.length + (posts.length ~/ 3),
+                  itemCount: itemCount,
                   itemBuilder: (context, index) {
-                    if (index % 4 == 3) {
+                    if (insertAds && index % 4 == 3) {
                       final adIndex = (index ~/ 4) % ads.length;
                       final ad = ads[adIndex].data() as Map<String, dynamic>;
                       final adImageUrl = ad['image'] ?? '';
 
-                      return FadeInUp(
-                        duration: const Duration(milliseconds: 500),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Column(
+                      return Padding(
+                        key: ValueKey('ad_${ads[adIndex].id}_$index'),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Column(
                             children: [
                               GestureDetector(
                                 onTap: () => _openAdLink(ad['url'] ?? ''),
@@ -929,11 +941,11 @@ class _PostsPageState extends State<PostsPage> {
                               ),
                             ],
                           ),
-                        ),
-                      );
+                        );
                     }
 
-                    final postIndex = index - (index ~/ 4);
+                    final postIndex =
+                        insertAds ? (index - (index ~/ 4)) : index;
                     final post = posts[postIndex].data() as Map<String, dynamic>;
                     final postId = posts[postIndex].id;
                     final postImageUrl = post['image'] ?? '';
@@ -949,11 +961,10 @@ class _PostsPageState extends State<PostsPage> {
                       debugPrint('Error parsing post time: $e');
                     }
 
-                    return FadeInUp(
-                      duration: const Duration(milliseconds: 500),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Card(
+                    return Padding(
+                      key: ValueKey('post_$postId'),
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Card(
                           elevation: 4.0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.0),
@@ -1159,7 +1170,6 @@ class _PostsPageState extends State<PostsPage> {
                             ],
                           ),
                         ),
-                      ),
                     );
                   },
                 );

@@ -267,6 +267,8 @@ class _UploadPageState extends State<UploadPage> {
             'isFollowing': false,
             'createdBy': user.uid,
             'createdAt': DateTime.now().toIso8601String(),
+            'likes': 0,
+            'likedBy': <String>[],
           });
           Fluttertoast.showToast(
             msg: 'Reel uploaded',

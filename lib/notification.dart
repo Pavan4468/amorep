@@ -6,10 +6,15 @@ import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsPage extends StatefulWidget {
+  /// Preferred: `(id, isReel)` so the app can switch between Posts and Reels tabs.
+  final void Function(String targetId, bool isReel)? onNavigateToContent;
+
+  /// Legacy: scroll within the current Posts list only (no tab switch).
   final Function(String)? onNavigateToPost;
 
   const NotificationsPage({
     Key? key,
+    this.onNavigateToContent,
     this.onNavigateToPost,
   }) : super(key: key);
 
@@ -186,6 +191,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
             final timestamp = data['timestamp'] as Timestamp?;
             final read = data['read'] as bool? ?? false;
             final postId = data['postId'] as String?;
+            final reelId = data['reelId'] as String?;
+            final targetType = (data['targetType'] as String?)?.toLowerCase();
+            final bool isReelTarget = targetType == 'reel' ||
+                (targetType == null &&
+                    reelId != null &&
+                    postId == null) ||
+                (targetType == null &&
+                    type == 'like' &&
+                    postId != null &&
+                    ((data['message'] as String?) ?? '')
+                        .toLowerCase()
+                        .contains('reel'));
 
             String actorName;
             String? profileUrl;
@@ -205,7 +222,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
               // like notification
               actorName = data['likerName'] as String? ?? 'Someone';
               profileUrl = data['likerProfile'] as String?;
-              actionText = 'liked your post';
+              final msg = data['message'] as String?;
+              actionText = (msg != null && msg.trim().isNotEmpty)
+                  ? msg.trim()
+                  : '$actorName liked your post';
               trailingIcon = Icons.favorite;
               iconColor = Colors.red;
             }
@@ -231,13 +251,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         }
                       }
 
-                      if (postId != null && widget.onNavigateToPost != null) {
-                        try {
-                          Navigator.pop(context);
+                      final targetId = isReelTarget
+                          ? (reelId ?? postId)
+                          : (postId ?? reelId);
+                      try {
+                        Navigator.pop(context);
+                        if (targetId != null &&
+                            widget.onNavigateToContent != null) {
+                          widget.onNavigateToContent!(targetId, isReelTarget);
+                        } else if (postId != null &&
+                            widget.onNavigateToPost != null &&
+                            !isReelTarget) {
                           widget.onNavigateToPost!(postId);
-                        } catch (e) {
-                          debugPrint('Navigation error: $e');
                         }
+                      } catch (e) {
+                        debugPrint('Navigation error: $e');
                       }
                     },
                     child: ListTile(
@@ -263,13 +291,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             fontSize: 15.5,
                             fontWeight: read ? FontWeight.normal : FontWeight.w600,
                           ),
-                          children: [
-                            TextSpan(text: actorName),
-                            TextSpan(
-                              text: ' $actionText',
-                              style: const TextStyle(fontWeight: FontWeight.normal),
-                            ),
-                          ],
+                          children: type == 'comment'
+                              ? [
+                                  TextSpan(text: actorName),
+                                  TextSpan(
+                                    text: ' $actionText',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.normal),
+                                  ),
+                                ]
+                              : [
+                                  TextSpan(
+                                    text: actionText,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.normal),
+                                  ),
+                                ],
                         ),
                       ),
                       subtitle: Column(

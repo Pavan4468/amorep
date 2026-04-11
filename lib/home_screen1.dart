@@ -25,14 +25,42 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
-  // Pages for each section
-  final List<Widget> _widgetOptions = <Widget>[
-     VideoScreen(),
-    const PostsPage(),
-    const ReelsPage(),
-    const EShoppingHomePage(),
-    const ProfilePage(),
-  ];
+  final GlobalKey<PostsPageState> _postsPageKey = GlobalKey<PostsPageState>();
+  final GlobalKey<ReelsPageState> _reelsPageKey = GlobalKey<ReelsPageState>();
+
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    _widgetOptions = <Widget>[
+      VideoScreen(),
+      PostsPage(
+        key: _postsPageKey,
+        onNotificationNavigate: _handleNotificationNavigate,
+      ),
+      ReelsPage(
+        key: _reelsPageKey,
+        onNotificationNavigate: _handleNotificationNavigate,
+      ),
+      const EShoppingHomePage(),
+      const ProfilePage(),
+    ];
+  }
+
+  void _handleNotificationNavigate(String targetId, bool isReel) {
+    setState(() {
+      _selectedIndex = isReel ? 2 : 1;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (isReel) {
+        _reelsPageKey.currentState?.scrollToReel(targetId);
+      } else {
+        _postsPageKey.currentState?.scrollToPost(targetId);
+      }
+    });
+  }
 
   // Function to handle navigation between pages
   void _onItemTapped(int index) {
@@ -250,6 +278,7 @@ class _MainPageState extends State<MainPage> {
           ),
         ),
       ),
+      // Single active tab avoids building Video + Posts + Reels + Shop + Profile at once (much faster).
       body: _widgetOptions[_selectedIndex],
       bottomNavigationBar: CurvedNavigationBar(
         index: _selectedIndex,
